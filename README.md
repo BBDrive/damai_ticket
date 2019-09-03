@@ -11,6 +11,8 @@ geckodriver.exe (测试版本：v0.24.0)
 
 --以上文件夹内包含--
 
+Firefox 浏览器安装好后需将geckodriver.exe放置于Firefox浏览器目录下
+
 pip install selenium
 
 ## Basic usage
