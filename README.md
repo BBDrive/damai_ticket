@@ -9,7 +9,7 @@ Firefox Browser (测试版本：v68.0.1.7137)
 
 geckodriver.exe (测试版本：v0.24.0)
 
---以上文件夹内包含--
+--以上两个安装包文件夹内均包含--
 
 Firefox 浏览器安装好后需将geckodriver.exe放置于Firefox浏览器目录下
 
@@ -55,7 +55,7 @@ pip install selenium
 
 使用前请将待抢票者的姓名、手机、地址设为默认。
 
-配置完成后执行python Autoticket.py即可。
+配置完成后执行python damai_ticket.py即可。
 
 本代码为保证抢票顺利，设置循环直到抢票成功才退出循环，若中途需要退出程序请直接终止程序。
 
