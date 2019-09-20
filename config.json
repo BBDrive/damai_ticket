@@ -1,11 +1,9 @@
 {
     "sess": [1],
-    "price": [
-        4,3,2,5,6,7,1
-    ],
+    "price": [2, 3, 1],
     "real_name": [1, 2],
-    "nick_name": "BBDrive",
+    "nick_name": "kaylen",
     "ticket_num": 2,
     "damai_url": "https://www.damai.cn/",
-    "target_url": "https://detail.damai.cn/item.htm?spm=a2oeg.search_category.searchtxt.ditem_0.b52c4d15KvuDfB&id=598182156683"
+    "target_url": "https://detail.damai.cn/item.htm?spm=a2oeg.home.card_0.ditem_0.591b23e1kV4fgA&id=602770049661"
 }
