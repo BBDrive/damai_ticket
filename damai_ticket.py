@@ -96,34 +96,30 @@ class Concert(object):
             self.time_start = time()
         except:
             self.status=0
-            raise Exception("***错误：登录失败,请删除cookie后重试***") 
             self.driver.quit()
+            raise Exception("***错误：登录失败,请删除cookie后重试***")
 
     def choose_ticket_1(self): # for type 1, i.e., detail.damai.cn
-        print("###开始进行日期及票价选择###")
+        print("###进入抢票界面###")
         
         while self.driver.title.find('确认订单') == -1:  # 如果跳转到了确认界面就算这步成功了，否则继续执行此步
             self.num += 1
 
             # 确认页面刷新成功
             try:
-                self.driver.get(self.target_url)
                 box = WebDriverWait(self.driver, 2, 0.2).until(EC.presence_of_element_located((By.CLASS_NAME, 'perform__order__box')))
             except:
-                print("***Error: 页面刷新出错***")
-                continue
+                raise Exception("***Error: 页面刷新出错***")
 
             try:
                 buybutton = box.find_element_by_class_name('buybtn')
                 buybutton_text = buybutton.text
             except:
-                print("***Error: box,selects or buybutton 位置找不到***")
-                continue
+                raise Exception("***Error: box,selects or buybutton 位置找不到***")
 
             if buybutton_text == "即将开抢" or buybutton_text == "即将开售":
                 self.status = 2
-                print('---尚未开售，刷新等待---')
-                continue
+                raise Exception("---尚未开售，刷新等待---")
 
             try:
                 selects = box.find_elements_by_class_name('perform__order__select')
@@ -161,14 +157,12 @@ class Concert(object):
                         j.click()
                         break
             except:
-                print("***Error: 选择场次or票档不成功***")
-                continue
+                raise Exception("***Error: 选择场次or票档不成功***")
 
             try:
                 ticket_num_up = box.find_element_by_class_name('cafe-c-input-number-handler-up')
             except:
-                print("***Error: ticket_num_up 位置找不到***")
-                continue
+                raise Exception("***Error: ticket_num_up 位置找不到***")
 
             if buybutton_text == "立即预订":
                 for i in range(self.ticket_num-1): # 设置增加票数
@@ -252,15 +246,14 @@ class Concert(object):
                     add.click()
             buybutton.click()
             # 目前没有找到缺货没有按钮的情况
-            
-    
+
     def check_order_1(self):
         if self.status in [3, 4, 5]:
             print('###开始确认订单###')
             print('###选择购票人信息###')
             try:
                 if self.status in [3, 4]:
-                    tb = WebDriverWait(self.driver, 1, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
+                    tb = WebDriverWait(self.driver, 2, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
                 else: # 选座
                     tb = WebDriverWait(self.driver, 60, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
                 init_sleeptime = 0.
@@ -301,7 +294,7 @@ class Concert(object):
                 raise Exception('***错误：没有找到提交订单按钮***')
            '''
             try:
-                element = WebDriverWait(self.driver, 1, 0.2).until(EC.title_contains('支付宝'))
+                element = WebDriverWait(self.driver, 10, 0.2).until(EC.title_contains('支付宝'))
                 self.status = 6
                 print('###成功提交订单,请手动支付###')
                 self.time_end = time()
@@ -309,7 +302,7 @@ class Concert(object):
                 raise Exception('***Error: 提交订单失败***')
 
     def check_order_2(self):
-        if self.status in [3,4,5]:
+        if self.status in [3, 4, 5]:
             print('###开始确认订单###')
             print('###选择购票人信息###')   
             try:
@@ -346,6 +339,7 @@ if __name__ == '__main__':
         con.enter_concert()
     except Exception as e:
         print(e)
+        exit(1)
     while True:
         try:
             if con.type == 1: # detail.damai.cn
@@ -359,5 +353,6 @@ if __name__ == '__main__':
                 con.finish()
                 break
         except Exception as e:
+            con.driver.get(con.target_url)
             print(e)
             continue
