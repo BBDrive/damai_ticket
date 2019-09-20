@@ -91,7 +91,6 @@ class Concert(object):
         
         while self.driver.title.find('确认订单') == -1:  # 如果跳转到了确认界面就算这步成功了，否则继续执行此步
             self.num += 1
-
             # 确认页面刷新成功
             try:
                 box = WebDriverWait(self.driver, 2, 0.2).until(EC.presence_of_element_located((By.CLASS_NAME, 'perform__order__box')))
@@ -221,11 +220,11 @@ class Concert(object):
 
             # 等待title出现并判断title是不是支付宝
             try:
-                WebDriverWait(self.driver, 20, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/head/title')))
+                WebDriverWait(self.driver, 20, 0.2).until_not(EC.title_contains('确认订单'))
             except:
                 raise Exception('***Error: 提交订单失败（打不开付款页面）***')
 
-            element = EC.title_contains('支付宝')
+            element = EC.title_contains('支付宝')(self.driver)
             if element:
                 self.status = 6
                 print('###成功提交订单,请手动支付###')
