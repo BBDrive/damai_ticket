@@ -148,7 +148,15 @@ class Concert(object):
             try:
                 ticket_num_up = box.find_element_by_class_name('cafe-c-input-number-handler-up')
             except:
-                raise Exception(u"***Error: ticket_num_up 位置找不到***")
+                if buybutton_text == "选座购买":  # 选座购买没有增减票数键
+                    buybutton.click()
+                    self.status = 5
+                    print(u"###请自行选择位置和票价，你有60秒的时间###")
+                    break
+                elif buybutton_text == "提交缺货登记":
+                    raise Exception(u'###票已被抢完，持续捡漏中...或请终止程序并手动提交缺货登记###')
+                else:
+                    raise Exception(u"***Error: ticket_num_up 位置找不到***")
 
             if buybutton_text == "立即预订":
                 for i in range(self.ticket_num-1):  # 设置增加票数
@@ -162,25 +170,16 @@ class Concert(object):
                 buybutton.click()
                 self.status = 4
 
-            elif buybutton_text == "选座购买":
-                buybutton.click()
-                self.status = 5
-                print(u"###请自行选择位置和票价，你有60秒的时间###") # 此处或可改成input，等待用户选完后反馈，继续抢票流程
-                break
-
-            elif buybutton_text == "提交缺货登记":
-                print(u'###抢票失败，请手动提交缺货登记###')
-                break
 
     def check_order(self):
         if self.status in [3, 4, 5]:
-            print(u'###开始确认订单###')
-            print(u'###选择购票人信息###')
             try:
                 if self.status in [3, 4]:
                     tb = WebDriverWait(self.driver, 5, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
                 else:  # 自行选座
                     tb = WebDriverWait(self.driver, 60, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
+                print(u'###开始确认订单###')
+                print(u'###选择购票人信息###')
                 init_sleeptime = 0.
                 Labels = tb.find_elements_by_tag_name('label')
                 for num_people in self.real_name:
@@ -203,7 +202,8 @@ class Concert(object):
                     if true_num == len(self.real_name):
                         break
             except:
-                raise Exception(u"***Error：实名信息选择框没有显示***")
+                if self.real_name is not None:
+                    raise Exception(u"***Error：实名信息选择框没有显示***")
             # print('###不选择订单优惠###')
             # print('###请在付款完成后下载大麦APP进入订单详情页申请开具###')
             self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[9]/button').click() # 同意以上协议并提交订单
