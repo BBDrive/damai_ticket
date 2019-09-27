@@ -93,7 +93,7 @@ class Concert(object):
             self.num += 1
             # 确认页面刷新成功
             try:
-                box = WebDriverWait(self.driver, 2, 0.2).until(EC.presence_of_element_located((By.CLASS_NAME, 'perform__order__box')))
+                box = WebDriverWait(self.driver, 2, 0.1).until(EC.presence_of_element_located((By.CLASS_NAME, 'perform__order__box')))
             except:
                 raise Exception(u"***Error: 页面刷新出错***")
 
@@ -170,17 +170,16 @@ class Concert(object):
                 buybutton.click()
                 self.status = 4
 
-
     def check_order(self):
         if self.status in [3, 4, 5]:
             try:
                 if self.status in [3, 4]:
-                    tb = WebDriverWait(self.driver, 5, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
+                    tb = WebDriverWait(self.driver, 5, 0.1).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
                 else:  # 自行选座
-                    tb = WebDriverWait(self.driver, 60, 0.2).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
+                    tb = WebDriverWait(self.driver, 60, 0.1).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
                 print(u'###开始确认订单###')
                 print(u'###选择购票人信息###')
-                init_sleeptime = 0.
+                init_sleeptime = 0.0
                 Labels = tb.find_elements_by_tag_name('label')
                 for num_people in self.real_name:
                     Labels[num_people-1].find_element_by_tag_name('input').click() # 选择第self.real_name个实名者
@@ -204,9 +203,10 @@ class Concert(object):
             except:
                 if self.real_name is not None:
                     raise Exception(u"***Error：实名信息选择框没有显示***")
-            # print('###不选择订单优惠###')
-            # print('###请在付款完成后下载大麦APP进入订单详情页申请开具###')
-            self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[9]/button').click() # 同意以上协议并提交订单
+            if self.real_name is not None:
+                self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[9]/button').click() # 同意以上协议并提交订单
+            else:
+                self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[8]/button').click()
             '''
             try:
                 buttons = self.driver.find_elements_by_tag_name('button') # 找出所有该页面的button
@@ -220,7 +220,7 @@ class Concert(object):
 
             # 等待title出现并判断title是不是支付宝
             try:
-                WebDriverWait(self.driver, 20, 0.2).until_not(EC.title_contains('确认订单'))
+                WebDriverWait(self.driver, 20, 0.1).until_not(EC.title_contains('确认订单'))
             except:
                 raise Exception(u'***Error: 提交订单失败（打不开付款页面）***')
 
