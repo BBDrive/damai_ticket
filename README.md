@@ -11,7 +11,7 @@ chromedriver.exe (测试版本：v77.0.3865.40)
 
 
 
-Chrome 浏览器安装好后需将geckodriver.exe放置于Chrome浏览器目录下
+Chrome 浏览器安装好后需将chromedriver.exe放置于Chrome浏览器目录下
 
 pip install selenium
 
