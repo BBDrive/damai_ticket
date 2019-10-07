@@ -98,7 +98,6 @@ class Concert(object):
             raise Exception(u"***错误：登录失败,请删除cookie后重试***")
 
     def choose_ticket(self):
-        self.time_start = time()
         print(u"###进入抢票界面###")
         while self.driver.title.find('确认订单') == -1:  # 如果跳转到了确认界面就算这步成功了，否则继续执行此步
             self.num += 1
@@ -211,7 +210,6 @@ class Concert(object):
                             true_num += 1
                     if true_num == len(self.real_name):
                         break
-                print("抢票所花时间：", time()-self.time_start)
                 self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[9]/button').click() # 同意以上协议并提交订单
 
             else:
