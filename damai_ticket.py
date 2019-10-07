@@ -22,6 +22,7 @@ class Concert(object):
         self.nick_name = nick_name  # 用户昵称
         self.damai_url = damai_url  # 大麦网官网网址
         self.target_url = target_url  # 目标购票网址
+        self.driver = None
 
     def isClassPresent(self, item, name, ret=False):
         try:
@@ -64,20 +65,30 @@ class Concert(object):
 
     def login(self):
         print(u'###开始登录###')
-        if not exists('cookies.pkl'):  # 如果不存在cookie.pkl,就获取一下
-            self.get_cookie()
         self.driver.get(self.target_url)
         self.set_cookie()
 
     def enter_concert(self):
         print(u'###打开浏览器，进入大麦网###')
-        self.driver = webdriver.Firefox()  # 默认火狐浏览器
-        self.driver.maximize_window()
+        if not exists('cookies.pkl'):   # 如果不存在cookie.pkl,就获取一下
+            self.driver = webdriver.Chrome()
+            self.get_cookie()
+            print(u'###成功获取Cookie，重启浏览器###')
+            self.driver.quit()
+
+        options = webdriver.ChromeOptions()
+        # 禁止图片、css、js加载
+        prefs = {"profile.managed_default_content_settings.images": 2,
+                 'permissions.default.stylesheet': 2}
+        options.add_experimental_option("prefs", prefs)
+        options.add_argument("--disable-javascript")
+
+        self.driver = webdriver.Chrome(options=options)
         self.login()
         self.driver.refresh()
         try:
             locator = (By.XPATH, "/html/body/div[1]/div/div[3]/div[1]/a[2]/div")
-            element = WebDriverWait(self.driver, 3, 0.3).until(EC.text_to_be_present_in_element(locator, self.nick_name))
+            WebDriverWait(self.driver, 100, 0.3).until(EC.text_to_be_present_in_element(locator, self.nick_name))
             self.status = 1
             print(u"###登录成功###")
             self.time_start = time()
@@ -87,8 +98,8 @@ class Concert(object):
             raise Exception(u"***错误：登录失败,请删除cookie后重试***")
 
     def choose_ticket(self):
+        self.time_start = time()
         print(u"###进入抢票界面###")
-        
         while self.driver.title.find('确认订单') == -1:  # 如果跳转到了确认界面就算这步成功了，否则继续执行此步
             self.num += 1
             # 确认页面刷新成功
@@ -119,7 +130,7 @@ class Concert(object):
 
                 session_list = session.find_elements_by_class_name('select_right_list_item')
                 # print('可选场次数量为：{}'.format(len(session_list)))
-                for i in self.session: # 根据优先级选择一个可行场次
+                for i in self.session:  # 根据优先级选择一个可行场次
                     j = session_list[i-1]
                     k = self.isClassPresent(j, 'presell', True)
                     if k: # 如果找到了带presell的类
@@ -151,10 +162,10 @@ class Concert(object):
                 if buybutton_text == "选座购买":  # 选座购买没有增减票数键
                     buybutton.click()
                     self.status = 5
-                    print(u"###请自行选择位置和票价，你有60秒的时间###")
+                    print(u"###请自行选择位置和票价###")
                     break
                 elif buybutton_text == "提交缺货登记":
-                    raise Exception(u'###票已被抢完，持续捡漏中...或请终止程序并手动提交缺货登记###')
+                    raise Exception(u'###票已被抢完，持续捡漏中...或请关闭程序并手动提交缺货登记###')
                 else:
                     raise Exception(u"***Error: ticket_num_up 位置找不到***")
 
@@ -172,23 +183,23 @@ class Concert(object):
 
     def check_order(self):
         if self.status in [3, 4, 5]:
-            try:
-                if self.status in [3, 4]:
-                    tb = WebDriverWait(self.driver, 5, 0.1).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
-                else:  # 自行选座
-                    tb = WebDriverWait(self.driver, 60, 0.1).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
+            if self.real_name is not None:
+                print(u"###等待--确认订单--页面出现，可自行刷新，若长期不跳转可选择-- CRTL+C --重新抢票###")
+                try:
+                    tb = WebDriverWait(self.driver, 3600, 0.1).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div/div[2]/div[2]/div[1]')))
+                except:
+                    raise Exception(u"***Error：实名信息选择框没有显示***")
                 print(u'###开始确认订单###')
                 print(u'###选择购票人信息###')
                 init_sleeptime = 0.0
                 Labels = tb.find_elements_by_tag_name('label')
                 for num_people in self.real_name:
-                    Labels[num_people-1].find_element_by_tag_name('input').click() # 选择第self.real_name个实名者
+                    Labels[num_people-1].find_element_by_tag_name('input').click()  # 选择第self.real_name个实名者
                     if num_people != self.real_name[-1]:
                         sleep(init_sleeptime)
 
                 # 防止点击过快导致没有选择多个人
-                all_true = False
-                while not all_true:
+                while True:
                     init_sleeptime += 0.1
                     true_num = 0
                     for num_people in self.real_name:
@@ -200,37 +211,22 @@ class Concert(object):
                             true_num += 1
                     if true_num == len(self.real_name):
                         break
-            except:
-                if self.real_name is not None:
-                    raise Exception(u"***Error：实名信息选择框没有显示***")
-            if self.real_name is not None:
+                print("抢票所花时间：", time()-self.time_start)
                 self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[9]/button').click() # 同意以上协议并提交订单
+
             else:
                 self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[8]/button').click()
-            '''
-            try:
-                buttons = self.driver.find_elements_by_tag_name('button') # 找出所有该页面的button
-                for button in buttons:
-                    if button.text == '同意以上协议并提交订单':
-                        button.click()
-                        break
-            except Exception as e:
-                raise Exception('***错误：没有找到提交订单按钮***')
-           '''
 
-            # 等待title出现并判断title是不是支付宝
+            # 判断title是不是支付宝
+            print(u"###等待跳转到--付款界面--，可自行刷新，若长期不跳转可选择-- CRTL+C --重新抢票###")
             try:
-                WebDriverWait(self.driver, 20, 0.1).until_not(EC.title_contains('确认订单'))
+                WebDriverWait(self.driver, 3600, 0.1).until(EC.title_contains('支付宝'))
             except:
-                raise Exception(u'***Error: 提交订单失败（打不开付款页面）***')
+                raise Exception(u'***Error: 长期跳转不到付款界面***')
 
-            element = EC.title_contains('支付宝')(self.driver)
-            if element:
-                self.status = 6
-                print(u'###成功提交订单,请手动支付###')
-                self.time_end = time()
-            else:
-                raise Exception(u'***Error: 提交订单失败（跳转到其他界面）***')
+            self.status = 6
+            print(u'###成功提交订单,请手动支付###')
+            self.time_end = time()
 
 
 if __name__ == '__main__':
