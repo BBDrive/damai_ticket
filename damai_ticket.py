@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 
 class Concert(object):
@@ -66,6 +67,7 @@ class Concert(object):
     def login(self):
         print(u'###开始登录###')
         self.driver.get(self.target_url)
+        WebDriverWait(self.driver, 10, 0.1).until(EC.title_contains('大麦网'))
         self.set_cookie()
 
     def enter_concert(self):
@@ -77,18 +79,22 @@ class Concert(object):
             self.driver.quit()
 
         options = webdriver.ChromeOptions()
-        # 禁止图片、css、js加载
+        # 禁止图片、js、css加载
         prefs = {"profile.managed_default_content_settings.images": 2,
+                 "profile.managed_default_content_settings.javascript": 1,
                  'permissions.default.stylesheet': 2}
         options.add_experimental_option("prefs", prefs)
-        options.add_argument("--disable-javascript")
 
-        self.driver = webdriver.Chrome(options=options)
+        # 更换等待策略为不等待浏览器加载完全就进行下一步操作
+        capa = DesiredCapabilities.CHROME
+        capa["pageLoadStrategy"] = "none"
+
+        self.driver = webdriver.Chrome(options=options, desired_capabilities=capa)
         self.login()
         self.driver.refresh()
         try:
             locator = (By.XPATH, "/html/body/div[1]/div/div[3]/div[1]/a[2]/div")
-            WebDriverWait(self.driver, 100, 0.3).until(EC.text_to_be_present_in_element(locator, self.nick_name))
+            WebDriverWait(self.driver, 5, 0.3).until(EC.text_to_be_present_in_element(locator, self.nick_name))
             self.status = 1
             print(u"###登录成功###")
             self.time_start = time()
@@ -101,9 +107,14 @@ class Concert(object):
         print(u"###进入抢票界面###")
         while self.driver.title.find('确认订单') == -1:  # 如果跳转到了确认界面就算这步成功了，否则继续执行此步
             self.num += 1
+
+            if con.driver.current_url.find("buy.damai.cn") != -1:
+                break
+
             # 确认页面刷新成功
             try:
-                box = WebDriverWait(self.driver, 2, 0.1).until(EC.presence_of_element_located((By.CLASS_NAME, 'perform__order__box')))
+                #box = self.driver.find_element_by_class_name('perform__order__box')
+                box = WebDriverWait(self.driver, 1, 0.1).until(EC.presence_of_element_located((By.CLASS_NAME, 'perform__order__box')))
             except:
                 raise Exception(u"***Error: 页面刷新出错***")
 
@@ -189,13 +200,9 @@ class Concert(object):
                 except:
                     raise Exception(u"***Error：实名信息选择框没有显示***")
                 print(u'###开始确认订单###')
-                print(u'###选择购票人信息###')
+                print(u'###选择购票人信息,可手动帮助点击###')
                 init_sleeptime = 0.0
                 Labels = tb.find_elements_by_tag_name('label')
-                for num_people in self.real_name:
-                    Labels[num_people-1].find_element_by_tag_name('input').click()  # 选择第self.real_name个实名者
-                    if num_people != self.real_name[-1]:
-                        sleep(init_sleeptime)
 
                 # 防止点击过快导致没有选择多个人
                 while True:
@@ -210,6 +217,7 @@ class Concert(object):
                             true_num += 1
                     if true_num == len(self.real_name):
                         break
+                print("本次抢票时间：", time()-self.time_start)
                 self.driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[9]/button').click() # 同意以上协议并提交订单
 
             else:
